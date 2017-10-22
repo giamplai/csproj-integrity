@@ -15,70 +15,127 @@ const beautifyPath = require("./beautifyPath");
  * @returns {promise}
  */
 module.exports = function() {
-    let cwd = process.cwd();
 
-    let csproj = globby.sync(["*.csproj"]).map(e => {
-      return beautifyPath(cwd + "/" + e);
-    });
 
-    if (csproj && csproj.length > 0) {
-      var parser = new xml2js.Parser();
-      var fileIncluded = [];
+	let cwd = process.cwd();
 
-      return new Promise((resolve, reject) => {
-        fs.readFile(csproj[0], (err, data) => {
-          parser.parseString(data, (err, result) => {
-            let itemgroups = result.Project.ItemGroup;
+	let csproj = globby.sync(["*.csproj"]).map(e => {
+		return beautifyPath(cwd + "/" + e);
+	});
 
-            if (!itemgroups || itemgroups.length === 0) {
-              reject("No item groups found in csprojFile");
-            }
+	if (csproj && csproj.length > 0) {
+		var parser = new xml2js.Parser();
+		var fileIncluded = {
+			all: [],
+			none: [],
+			content: []
+		};
 
-            fileIncluded = itemgroups
-              //Take only item groups <Compile>, <Content>, <None> and <TypeScriptCompile>
-              .filter(
-                item =>
-                  item.Compile ||
-                  item.Content ||
-                  item.None ||
-                  item.TypeScriptCompile ||
-                  false
-              )
-              //Take only the object of itemgroup
-              .map(item => {
-                let a = [];
+		return new Promise((resolve, reject) => {
+			fs.readFile(csproj[0], (err, data) => {
+				parser.parseString(data, (err, result) => {
+					let itemgroups = result.Project.ItemGroup;
 
-                if (item.Content) {
-                  a = a.concat(item.Content);
-                }
-                if (item.Compile) {
-                  a = a.concat(item.Compile);
-                }
-                if (item.None) {
-                  a = a.concat(item.None);
-                }
-                if (item.TypeScriptCompile) {
-                  a = a.concat(item.TypeScriptCompile);
-                }
+					if (!itemgroups || itemgroups.length === 0) {
+						reject("No item groups found in csprojFile");
+					}
 
-                return a;
-              })
-              .reduce((fileIncludes, itemsArray) => {
-                fileIncludes = itemsArray
-                  .map(item => {
-                    let include = item.$.Include;
-                    include = include.replace(/\\/g, path.sep); //normalize on *nix
-                    return unescape(include);
-                  })
-                  .concat(fileIncludes);
+					fileIncluded.all = itemgroups
+						//Take only item groups <Compile>, <Content>, <None> and <TypeScriptCompile>
+						.filter(
+							item => item.Compile || item.Content || item.None || item.TypeScriptCompile || false
+						)
+						//Take only the object of itemgroup
+						.map(item => {
+							let a = [];
 
-                return fileIncludes;
-              }, []);
-            resolve(fileIncluded);
-          });
-        });
-      });
-    } else {
-      return Promise.reject("ERR: csproj file not found");
-    }
+							if (item.Content) {
+								a = a.concat(item.Content);
+							}
+							if (item.Compile) {
+								a = a.concat(item.Compile);
+							}
+							if (item.None) {
+								a = a.concat(item.None);
+							}
+							if (item.TypeScriptCompile) {
+								a = a.concat(item.TypeScriptCompile);
+							}
+
+							return a;
+						})
+						.reduce((fileIncludes, itemsArray) => {
+							fileIncludes = itemsArray
+								.map(item => {
+									let include = item.$.Include;
+									include = path.normalize(include); //normalize on *nix
+									return unescape(include);
+								})
+								.concat(fileIncludes);
+
+							return fileIncludes;
+						}, []);
+
+					fileIncluded.none = itemgroups
+						//Take only item groups  <None>
+						.filter(
+							item => item.None || false
+						)
+						//Take only the object of itemgroup
+						.map(item => {
+							let a = [];
+
+							if (item.None) {
+								a = a.concat(item.None);
+							}
+
+							return a;
+						})
+						.reduce((fileIncludes, itemsArray) => {
+							fileIncludes = itemsArray
+								.map(item => {
+									let include = item.$.Include;
+									include = path.normalize(include) //normalize on *nix
+									return unescape(include);
+								})
+								.concat(fileIncludes);
+
+							return fileIncludes;
+						}, []);
+
+					fileIncluded.content = itemgroups
+						//Take only item groups <Content>
+						.filter(
+							item => item.Content || false
+						)
+						//Take only the object of itemgroup
+						.map(item => {
+							let a = [];
+
+							if (item.Content) {
+								a = a.concat(item.Content);
+							}
+
+							return a;
+						})
+						.reduce((fileIncludes, itemsArray) => {
+							fileIncludes = itemsArray
+								.map(item => {
+									let include = item.$.Include;
+									include = path.normalize(include); //normalize on *nix
+									return unescape(include);
+								})
+								.concat(fileIncludes);
+
+							return fileIncludes;
+						}, []);
+
+
+					resolve(fileIncluded);
+				});
+			});
+		});
+	} else {
+		return Promise.reject("ERR: csproj file not found");
+	}
 }
