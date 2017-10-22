@@ -35,11 +35,12 @@ module.exports = function() {
             }
 
             fileIncluded = itemgroups
-              //Take only item groups <Compile>, <Content> and <TypeScriptCompile>
+              //Take only item groups <Compile>, <Content>, <None> and <TypeScriptCompile>
               .filter(
                 item =>
                   item.Compile ||
                   item.Content ||
+                  item.None ||
                   item.TypeScriptCompile ||
                   false
               )
@@ -52,6 +53,9 @@ module.exports = function() {
                 }
                 if (item.Compile) {
                   a = a.concat(item.Compile);
+                }
+                if (item.None) {
+                  a = a.concat(item.None);
                 }
                 if (item.TypeScriptCompile) {
                   a = a.concat(item.TypeScriptCompile);
