@@ -26,27 +26,35 @@ const csprojIntegrity = {
   },
 
   checkFiles(files) {
-    return parseCsproj()
-      .then(fileIncludes => {
-        return compareFiles(files, fileIncludes);
-      })
-      .then(function(result) {
-        if (!result || result.length > 0) {
-          return Promise.resolve(
-            response("error", "Files that are not included:", result)
-          );
-        } else {
-          return Promise.resolve(
-            response("success", "OK! All files are included!", result)
-          );
-        }
-      })
-      .catch(function(err) {
-        return Promise.resolve(
-          response("fail", "Failing during checking", err)
-        );
-      });
-  },
+		return parseCsproj()
+			.then(fileIncludes => {
+				return compareFiles(files, fileIncludes.all);
+			})
+			.then(function(result) {
+				if (!result || result.includeList.length + result.excludeList.length == 0) {
+					return Promise.resolve(
+						response("success", "OK! All files are included!", result)
+					);
+				}
+
+				if (result.includeList.length > 0) {
+					return Promise.resolve(
+						response("error", "Files that are not included:", result.includeList)
+					);
+				}
+
+				if (result.excludeList.length > 0) {
+					return Promise.resolve(
+						response("error", "Files that need to be excluded:", result.excludeList)
+					);
+				}
+			})
+			.catch(function(err) {
+				return Promise.resolve(
+					response("fail", "Failing during checking", err)
+				);
+			});
+	},
 
   checkIntegrity() {
     let status = {
@@ -58,21 +66,25 @@ const csprojIntegrity = {
       .then(fileIncludes => {
         let fileNotFound = [];
         let duplicatedFiles = [];
+				let none = [];
+				let content = [];
 
-        fileNotFound = fileIncludes.filter(this.checkExist);
-        duplicatedFiles = fileIncludes.filter(checkDuplicated);
+				fileNotFound = fileIncludes.all.filter(this.checkExist);
+				duplicatedFiles = fileIncludes.all.filter(checkDuplicated);
+        none = fileIncludes.none;
+        content = fileIncludes.content;
 
-        status.notFound =
-          !fileNotFound || fileNotFound.length > 0 ? true : false;
+				status.notFound = !fileNotFound || fileNotFound.length > 0 ? true : false;
 
-        status.duplicated =
-          !duplicatedFiles || duplicatedFiles.length > 0 ? true : false;
+				status.duplicated = !duplicatedFiles || duplicatedFiles.length > 0 ? true : false;
 
         if (status.duplicated || status.notFound) {
           return Promise.resolve(
             response("error", "There are some problems in your csproj file", {
               fileNotFound,
-              duplicatedFiles
+							duplicatedFiles,
+              none,
+              content
             })
           );
         } else {

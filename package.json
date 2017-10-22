@@ -1,6 +1,6 @@
 {
   "name": "csproj-integrity",
-  "version": "2.0.2",
+  "version": "2.1.2",
   "description": "Check csproj file (Visual Studio) integrity",
   "keywords": [
     "csproj",
@@ -12,21 +12,12 @@
   "scripts": {
     "test": "node test/tests.js | tap-spec"
   },
-  "repository": "mantovanig/csproj-integrity",
+  "repository": "giamplai/csproj-integrity",
   "bugs": {
-    "url": "https://github.com/mantovanig/grunt-csproj-integrity/issues"
+    "url": "https://github.com/giamplai/grunt-csproj-integrity/issues"
   },
-  "author": "mantovanig",
-  "contributors": [
-    {
-      "name": "G100g",
-      "email": "giorgio@g100g.net",
-      "url": "http://g100g.net"
-    }
-  ],
   "license": "MIT",
   "dependencies": {
-    "commander": "^2.9.0",
     "globby": "6.0.0",
     "lodash": "^4.14.0",
     "path": "0.12.7",
