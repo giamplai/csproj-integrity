@@ -14,7 +14,7 @@ const getDiff = require("./getDiff");
  */
 module.exports = function(path, files) {
     return new Promise(resolve => {
-      globby(path).then(localfiles => {
+      globby(path, {nodir: true}).then(localfiles => {
         let diff = getDiff(localfiles, files);
         resolve(diff);
       });
